@@ -2,6 +2,7 @@ import {
   Pagination,
   PaginationButton,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationNext,
   PaginationPrevious
@@ -17,10 +18,18 @@ import {
   TableRow,
 } from '@/components/ui/Table';
 import { useClients } from '@/hooks/useClients';
+import { generateEllipsisPagination } from '@/lib/utils';
+import { useMemo } from 'react';
 
 export function Clients() {
-  const { clients, isLoading } = useClients();
+  const { clients, isLoading, pagination } = useClients(1);
 
+  const pages = useMemo(() => {
+    return generateEllipsisPagination(pagination.currentPage, pagination.totalPages);
+  }, [
+    pagination.currentPage,
+    pagination.totalPages
+  ]);
 
   return (
     <div>
@@ -58,7 +67,7 @@ export function Clients() {
             {clients.map(client => (
               <TableRow key={client.id}>
                 <TableCell className="flex items-center gap-2">
-                  <img src={client.avatar} alt={client.name} className="w-10 h-10 rounded-full" />
+                  {/* <img src={client.avatar} alt={client.name} className="w-10 h-10 rounded-full" /> */}
                   <div>
                     <strong>{client.name}</strong>
                     <small className="text-muted-foreground block">{client.email}</small>
@@ -83,28 +92,41 @@ export function Clients() {
               </TableRow>
             ))}
           </TableBody>
-
           <TableCaption>
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
-                  <PaginationPrevious />
+                  <PaginationPrevious onClick={pagination.previousPage} disabled={!pagination.hasPreviousPage} />
                 </PaginationItem>
 
-                <PaginationItem>
-                  <PaginationButton isActive>
-                    1
-                  </PaginationButton>
-                </PaginationItem>
+
+                {pages.map(page => {
+                  const isEllipsisPosition = typeof page === 'string';
+
+                  if (isEllipsisPosition) {
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationButton disabled>
+                          <PaginationEllipsis />
+                        </PaginationButton>
+                      </PaginationItem>
+                    );
+                  }
+
+                  return (
+                    <PaginationItem key={page}>
+                      <PaginationButton
+                        isActive={pagination.currentPage === page}
+                        onClick={() => pagination.setPage(page)}>
+                        {page}
+                      </PaginationButton>
+                    </PaginationItem>
+
+                  );
+                })}
 
                 <PaginationItem>
-                  <PaginationButton>
-                    2
-                  </PaginationButton>
-                </PaginationItem>
-
-                <PaginationItem>
-                  <PaginationNext />
+                  <PaginationNext onClick={pagination.nextPage} disabled={!pagination.hasNextPage} />
                 </PaginationItem>
 
               </PaginationContent>
