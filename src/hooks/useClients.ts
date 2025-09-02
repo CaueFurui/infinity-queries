@@ -1,44 +1,29 @@
 import { ClientsService } from '@/services/ClientsService';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { usePagination } from './usePagination';
-import { useEffect } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 export function useClients(perPage = 20) {
-  const pagination = usePagination(perPage);
-  const queryClient = useQueryClient();
-  const { data, isLoading } = useQuery({
-    queryKey: ['clients', { page: pagination.currentPage, perPage }],
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: ['clients'],
     staleTime: Infinity,
-    queryFn: async () => {
-      const response = await ClientsService.getAll(pagination.currentPage, perPage);
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => ClientsService.getAll(pageParam, perPage),
+    getNextPageParam: (lastPage, allPages, lastPageParam) => {
+      const totalPages = Math.ceil(lastPage.items / perPage);
+      const isLastPage = allPages.length >= totalPages;
 
-      pagination.setTotalItems(response.items);
+      if (isLastPage) return null;
 
-      return response;
+      return lastPageParam + 1;
     },
   });
 
-  useEffect(() => {
-    if(pagination.hasNextPage) {
-      const nextPage = pagination.currentPage + 1;
-
-      queryClient.prefetchQuery({
-        queryKey: ['clients', { page: nextPage, perPage }],
-        staleTime: Infinity,
-        queryFn: async () => {
-          const response = await ClientsService.getAll(pagination.currentPage, perPage);
-
-          pagination.setTotalItems(response.items);
-
-          return response;
-        },
-      });
-    }
-  }, [pagination.currentPage, pagination.hasNextPage]);
+  const clients = data?.pages.flatMap(page => page.data);
 
   return {
-    clients: data?.data ?? [],
+    clients: clients ?? [],
     isLoading,
-    pagination
+    nextPage: fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
   };
 }

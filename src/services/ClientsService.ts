@@ -1,3 +1,4 @@
+// import { delay } from '@/lib/utils';
 import { httpClient } from './httpClient';
 import { IPaginatedResponse } from './types';
 
@@ -14,6 +15,7 @@ interface IClient {
 
 export class ClientsService {
   static async getAll(page = 1, per_page = 20) {
+    // await delay(1000);
     const { data } = await httpClient.get<IPaginatedResponse<IClient[]>>('/clients', {
       params: {
         _page: page,

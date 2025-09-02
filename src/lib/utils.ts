@@ -35,3 +35,7 @@ export function generateEllipsisPagination(
 
   return pages;
 }
+
+export function delay(time = 1500): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
